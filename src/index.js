@@ -8,6 +8,7 @@ import * as $ from 'jquery'
 //import './index.html'
 import './styles/less.less'
 import './styles/scss.scss'
+import  './babel'
 
 const post = new Post('Webpack Post Title', WebpackLogo)
 
