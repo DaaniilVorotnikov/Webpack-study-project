@@ -5,6 +5,9 @@ const CopyWebpackPlugin = require('copy-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const OptimizeCssAssetWebpackPlugin = require('optimize-css-assets-webpack-plugin')
 const TerserWebpackPlugin = require('terser-webpack-plugin')
+const BundleAnalyzerPlugin  = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
+
+
 
 const isDev = process.env.NODE_ENV === 'development'
 const isProd = !isDev
@@ -39,6 +42,62 @@ const cssLoader = (extra) => {
     return loaders    
 }
 
+const babelOptions = preset => {
+   const options = {
+        presets: [
+            '@babel/preset-env'
+        ],
+        plugins: [
+            '@babel/plugin-proposal-class-properties'
+        ]
+      }
+    
+    if(preset){
+        options.presets.push(preset)
+    }  
+    return options
+}
+
+const jsLoaders = () => {
+    const loaders = [{
+        loader: 'babel-loader',
+        options: babelOptions()
+    }]
+
+    // if(isDev){
+    //     loaders.push('eslint-loader')
+    // }
+
+    return loaders
+}
+
+const plugins = () => {
+    const base = [
+        new HTMLWebpackPlugin({
+            template: './index.html',
+            minify:{
+                collapseWhitespace: isProd
+            }
+        }), 
+        new CleanWebpackPlugin(),
+        new CopyWebpackPlugin({
+            patterns: [
+            {
+                from: path.resolve(__dirname, 'src/favicon.ico'),
+                to: path.resolve(__dirname, 'dist')
+            }
+        ]}),
+        new MiniCssExtractPlugin({
+            filename: filename('css')
+        }),
+    ]
+    if(isProd){
+        base.push(new BundleAnalyzerPlugin())
+    }
+
+    return base
+}
+
 const filename = ext => isDev ? `[name].${ext}` : `[name].[hash].${ext}`
 
 console.log('IS DEV', isDev)
@@ -47,8 +106,8 @@ module.exports = {
     context: path.resolve(__dirname, 'src'),
     mode: 'development',
     entry: {
-        main:['@babel/polyfill', './index.js'],
-        analytics: './analytics.js'
+        main:['@babel/polyfill', './index.jsx'],
+        analytics: './analytics.ts'
     },
     output:{
         filename: filename('js'),
@@ -69,25 +128,8 @@ module.exports = {
           compress: true,
           port: 9000,
     },
-    plugins: [
-        new HTMLWebpackPlugin({
-            template: './index.html',
-            minify:{
-                collapseWhitespace: isProd
-            }
-        }), 
-        new CleanWebpackPlugin(),
-        new CopyWebpackPlugin({
-            patterns: [
-            {
-                from: path.resolve(__dirname, 'src/favicon.ico'),
-                to: path.resolve(__dirname, 'dist')
-            }
-        ]}),
-        new MiniCssExtractPlugin({
-            filename: filename('css')
-        })
-    ],
+   // devtool: isDev ? 'source-map' : '',
+    plugins: plugins(),
     module: {
         rules: [
             {
@@ -121,11 +163,22 @@ module.exports = {
             {
                 test: /\.m?js$/,
                 exclude: /node_modules/,
+                use: jsLoaders(),
+              },
+              {
+                test: /\.m?ts$/,
+                exclude: /node_modules/,
                 use: {
                   loader: "babel-loader",
-                  options: {
-                    presets: ['@babel/preset-env']
-                  }
+                  options: babelOptions('@babel/preset-typescript')
+                }
+              },
+              {
+                test: /\.m?jsx$/,
+                exclude: /node_modules/,
+                use: {
+                  loader: "babel-loader",
+                  options: babelOptions('@babel/preset-react')
                 }
               }
 

@@ -1,0 +1,1 @@
+(()=>{var n,e,t;window.analytics=(n=0,e=!1,t=function(){return n++},document.addEventListener("click",t),{destroy:function(){document.removeEventListener("click",t),e=!0},getClicks:function(){return e?"Analytics is destroyed":n}})})();
